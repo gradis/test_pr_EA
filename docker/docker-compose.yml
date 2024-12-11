@@ -1,0 +1,50 @@
+version: '3.8'
+services:
+  nginx:
+    container_name: nginx
+    platform: linux/x86_64
+    image: nginx:alpine
+    restart: unless-stopped
+    tty: true
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ../laravel:/var/www/html
+      - ./nginx/:/etc/nginx/conf.d/
+    networks:
+      - app-network
+  laravel:
+    container_name: laravel
+    working_dir: /var/www/html
+    build:
+      args:
+        USER: www-data
+      context: ./
+      dockerfile: Dockerfile
+    volumes:
+      - ../laravel:/var/www/html
+      - ./laravel.ini:/usr/local/etc/php/conf.d/laravel.ini
+    networks:
+      - app-network
+  database:
+    container_name: database
+    image: mysql:latest
+    restart: unless-stopped
+    command: --init-file /data/application/init.sql
+    tty: true
+    ports:
+      - "3306:3306"
+    environment:
+      MYSQL_DATABASE: laravel
+      MYSQL_USER: user
+      MYSQL_PASSWORD: 123test321
+      MYSQL_ROOT_PASSWORD: 123test321
+    volumes:
+      - ./mysql/init_db.sql:/data/application/init.sql
+      - ./mysql/data:/var/lib/mysql
+    networks:
+      - app-network
+networks:
+  app-network:
+    driver: bridge
